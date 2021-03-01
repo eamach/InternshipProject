@@ -1,0 +1,34 @@
+build:
+ stage: build
+ tags: [security]
+ script:
+  - cd Projects/gitlab-report-parser
+  - ./buildjar.sh
+ artifacts:
+  paths:
+    - "Projects/gitlab-report-parser/gitlab-report-parser.jar"
+
+
+
+#disabled because it'll be implemented by gitlab
+
+# release:
+#   stage: deploy
+#   variables:
+#     GIT_STRATEGY: none
+#   tags: [security]
+#   dependencies:
+#     - build
+#   image: python3
+#   script:
+#     - pip3 install gitlab-release --user
+#     - gitlab-release Projects/gitlab-report-parser/gitlab-report-parser.jar
+#   only:
+#     - tags
+
+# release-branch:
+#   stage: deploy
+#   script:
+#     - docker run --rm "registry.gitlab.com/gitlab-org/release-cli" /usr/local/bin/release-cli -server-url REDACTED create --name release-branch-$CI_JOB_ID --description release-branch-$CI_COMMIT_REF_NAME-$CI_JOB_ID 
+#       --tag-name job-$CI_JOB_ID --ref $CI_COMMIT_SHA
+

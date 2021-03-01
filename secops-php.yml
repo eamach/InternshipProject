@@ -1,0 +1,11 @@
+reportparser:
+  tags: [security]
+  stage: test
+  script:
+    - echo "Starting analysis..."
+    - docker run --rm --user="$(id -u):$(id -g)" -v "$PWD:/var" (REDACTED)/phpcs-security-audit_docker:1.0 vendor/bin/phpcs --standard=vendor/pheromone/phpcs-security-audit/example_base_ruleset.xml --report=json --report-file=/var/phpreport.json /var 
+    - echo "Let's get it!"
+    - echo "Getting latest Report Parser..."
+    # private-token there because the runner doesn't have access to the repo - will be fixed once it's made public
+    - "curl -H 'PRIVATE-TOKEN: $CI_BOT_TOKEN' \"(REDACTED)/api/v4/projects/255/repository/files/Projects%2Fgitlab-report-parser%2Fgitlab-report-parser.jar/raw/?ref=master\" -o \"gitlab-report-parser.jar\""
+    - java -jar gitlab-report-parser.jar -php phpreport.json

@@ -1,0 +1,41 @@
+#attaining-artifacts:
+ # stage: build
+  #needs: ["build"]
+  #variables:
+   # GIT_STRATEGY: none
+  #script:
+   # - find . -name *.jar
+  #artifacts:
+   # paths:
+    #  - "**/target/archive-tmp/*.jar"
+
+#analysis:
+ # variables:
+  #  GIT_STRATEGY: none
+  #stage: test
+ # tags: [security]
+  #dependencies:
+   # - attaining-artifacts
+  #script:
+   # - docker run --rm --user="$(id -u):$(id -g)" -v "$PWD:/var" eamach/findsecbugs-docker:1.0 find /var -name *.jar > libs.txt
+    #- cat libs.txt | docker run --rm --user="$(id -u):$(id -g)" -v "$PWD:/var" eamach/findsecbugs-docker:1.0 findsecbugs.sh -xargs -progress -xml -output /var/findsecbugs.xml /var
+  #artifacts:
+   # paths:
+    #  - findsecbugs.xml
+
+reportparser:
+  tags: [security]
+  stage: test
+  dependencies:
+    - build
+  script:
+    - echo "Moving files to their proper place..."
+    - (mkdir securityanalysis && mv */target/archive-tmp/*.jar securityanalysis/) || true
+    - (mkdir securityanalysis && (for file in ./target/* ; do mv "$file" "./target/$(basename "$file" .original)"; done) && mv target/*.jar securityanalysis/) || true
+    - echo "Starting analysis..."
+    - docker run --rm --user="$(id -u):$(id -g)" -v "$PWD/securityanalysis:/var" eamach/findsecbugs-docker:1.0 findsecbugs.sh -xargs -progress -xml -output /var/findsecbugs.xml /var
+    - echo "Let's get it!"
+    - echo "Getting latest Report Parser..."
+    # private-token there because the runner doesn't have access to the repo - will be fixed once it's made public
+    - "curl -H 'PRIVATE-TOKEN: $CI_BOT_TOKEN' \"(REDACTED)/api/v4/projects/255/repository/files/Projects%2Fgitlab-report-parser%2Fgitlab-report-parser.jar/raw/?ref=master\" -o \"gitlab-report-parser.jar\""
+    - java -jar gitlab-report-parser.jar -java securityanalysis/findsecbugs.xml

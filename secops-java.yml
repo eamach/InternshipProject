@@ -1,0 +1,16 @@
+reportparser:
+  tags: [security]
+  stage: test
+  dependencies:
+    - build
+  script:
+    - echo "Moving files to their proper place..."
+    - (mkdir securityanalysis && mv */target/archive-tmp/*.jar securityanalysis/) || true
+    - ((for file in ./target/* ; do mv "$file" "./target/$(basename "$file" .original)"; done) && mv target/*.jar securityanalysis/) || true
+    - echo "Starting analysis..."
+    - ls securityanalysis/
+    - docker run --rm --user="$(id -u):$(id -g)" -v "$PWD/securityanalysis:/var" (REDACTED)/findsecbugs-docker:2.0 findsecbugs.sh -xargs -progress -xml -output /var/findsecbugs.xml /var
+    - echo "Let's get it!"
+    - echo "Getting latest Report Parser..."
+    - "curl -H 'PRIVATE-TOKEN: $CI_BOT_TOKEN' \"(REDACTED)/api/v4/projects/255/repository/files/Projects%2Fgitlab-report-parser%2Fgitlab-report-parser.jar/raw/?ref=master\" -o \"gitlab-report-parser.jar\""
+    - java -jar gitlab-report-parser.jar -java securityanalysis/findsecbugs.xml

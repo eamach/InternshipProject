@@ -1,0 +1,17 @@
+reportparser:
+    tags: [security]
+    stage: test
+    allow_failure: true
+    script:
+      - echo "Starting analysis..."
+      - (docker run --rm --user="$(id -u):$(id -g)" -v "$PWD:/var/analysis/" (REDACTED)/nodejsscancli_docker njsscan /var/analysis --json -o /var/analysis/njsscan.json) || true
+      - echo "Let's get it!"
+      - echo "Getting latest Report Parser..."
+      # private-token there because the runner doesn't have access to the repo - will be fixed once it's made public
+      - "curl -H 'PRIVATE-TOKEN: $CI_BOT_TOKEN' \"(REDACTED)/api/v4/projects/255/repository/files/Projects%2Fgitlab-report-parser%2Fgitlab-report-parser.jar/raw/?ref=master\" -o \"gitlab-report-parser.jar\""
+      - java -jar gitlab-report-parser.jar -node njsscan.json  
+    artifacts:
+        when: always
+        paths: 
+            - njsscan.json
+    

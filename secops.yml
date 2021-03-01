@@ -1,0 +1,11 @@
+before_script:
+  - VAR=$(docker run --rm -v "$(pwd):/repo" eamach/linguist)
+  - if [[ "$VAR" == *"Java"* ]]; then
+    export LANG=="java"
+    else
+    echo "Negativo"
+    fi
+
+include:
+  - project: 'security1/secops'
+    file: '/secops-$LANG.yml'
